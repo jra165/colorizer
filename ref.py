@@ -4,15 +4,11 @@ import numpy as np
 import os
 import random
 import sys
-import tensorflow as tf
 import math
 
 from numpy import newaxis
 from PIL import Image
-from sklearn.model_selection import train_test_split
-from tensorflow.keras import datasets, layers, models
 from typing import Tuple, Dict
-from keras.utils import np_utils
 
 import matplotlib.pyplot as plt
 from queue import PriorityQueue, Queue
@@ -27,7 +23,7 @@ def retrieve_pixels() -> Tuple[np.array, np.array]:
 
     # Get file path to image
     root_dir = os.getcwd()
-    file_path = os.path.join(root_dir, 'flag.jpg')
+    file_path = os.path.join(root_dir, 'palm_tree.jpeg')
 
     # Open image
     im = Image.open(file_path)
@@ -530,80 +526,6 @@ def generate_regression_equations(rgb: np.array, gray: np.array):
 
     return (wr, br), (wg, bg), (wb, bb)
 
-def run_advanced_agent(gray: np.array, rgb: np.array, representative_color_labels: np.array, grayscale: np.array, representative_colors) -> np.array:
-    train_grayscale, test_grayscale, train_rgb_labels, test_rgb_labels = train_test_split(grayscale, representative_color_labels, test_size=0.2,
-                                                                            random_state=1)
-    train_grayscale = np.array(train_grayscale).flatten()
-    train_rgb_labels = np.array(train_rgb_labels).flatten()
-    test_grayscale = np.array(test_grayscale).flatten()
-    test_rgb_labels = np.array(test_rgb_labels).flatten()
-
-    # train_grayscale = train_grayscale[newaxis, ...]
-    # test_grayscale = test_grayscale[newaxis, ...]
-
-    print(train_grayscale.shape)
-    print(train_rgb_labels.shape)
-    print(test_grayscale.shape)
-    print(test_rgb_labels.shape)
-
-    # One Hot Encoding
-    train_rgb_labels = np_utils.to_categorical(train_rgb_labels)
-    test_rgb_labels = np_utils.to_categorical(test_rgb_labels)
-
-    print(test_grayscale)
-    print(test_rgb_labels)
-    print(test_rgb_labels.shape)
-
-    model = models.Sequential()
-    model.add(layers.Dense(8, input_dim=1, activation='relu'))
-    model.add(layers.Dense(8, activation='relu'))
-    model.add(layers.Dense(5, activation='softmax'))
-
-    # model.add(layers.Conv1D(2, 3, 2, activation='relu', input_shape=(train_grayscale.shape[1], train_grayscale.shape[2])))
-    # model.add(layers.Conv1D(2, 3, 2, activation='relu', input_shape=(None, 1)))
-    #
-    # model.add(layers.Conv1D(64, 3, 2, activation='relu'))
-    # model.add(layers.Conv1D(64, 3, 2, activation='relu'))
-    #
-    # model.add(layers.Flatten())
-    # model.add(layers.Dense(64, activation='relu'))
-    # model.add(layers.Dense(400))
-
-    # Compile keras model
-    model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=0.001),
-                  loss=tf.keras.losses.CategoricalCrossentropy(),
-                  metrics=['accuracy'])
-
-    # Fit model
-    history = model.fit(train_grayscale, train_rgb_labels, epochs=50,
-                        validation_data=(test_grayscale, test_rgb_labels))
-
-    # Evaluate model
-    test_loss, test_acc = model.evaluate(test_grayscale, test_rgb_labels, verbose=2)
-
-    # Fill in right half
-    num_rows = rgb.shape[0]
-    num_cols = rgb.shape[1]
-
-    flattened_gray = gray.flatten()
-    predictions = model.predict(flattened_gray)
-    predictions = np.reshape(predictions, (num_rows, num_cols, -1))
-    np.set_printoptions(threshold=sys.maxsize)
-    # print(predictions)
-
-    for i in range(0, num_rows):
-        for j in range(int(num_cols / 2), num_cols):
-            color_index = np.argmax(predictions[i][j])
-            rgb[i][j] = representative_colors[color_index]
-
-    plt.imshow(rgb.astype('uint8'))
-    plt.show()
-
-    return rgb
-
-    # Save model
-    # os.mkdir('model')
-    # model.save('model/trained_cnn_model', overwrite=True)
 
 
 def calculate_accuracy(base: np.array, recolored: np.array) -> float:
@@ -649,26 +571,23 @@ def main():
     plt.imshow(new_rgb.astype('uint8'))
     plt.show()
 
-    basic_rgb = np.copy(new_rgb)
+    #basic_rgb = np.copy(new_rgb)
     improved_rgb = np.copy(new_rgb)
-    advanced_rgb = np.copy(new_rgb)
+    #advanced_rgb = np.copy(new_rgb)
 
-    basic_recolored = run_basic_agent(basic_rgb, gray, representative_colors, pixel_color_array)
+    #basic_recolored = run_basic_agent(basic_rgb, gray, representative_colors, pixel_color_array)
     improved_recolored = run_improved_agent(improved_rgb, gray, representative_colors, pixel_color_array)
 
     # left_half_gray = np.delete(gray, [int(num_cols / 2), num_cols-1], axis=1)
     left_half_gray = np.delete(gray, np.s_[int(num_cols / 2): num_cols], axis=1)
     left_half_new_rgb_labels = np.delete(new_rgb_labels, np.s_[int(num_cols / 2): num_cols], axis=1)
-    advanced_recolored = run_advanced_agent(gray, advanced_rgb, left_half_new_rgb_labels, left_half_gray, representative_colors)
 
-    basic_accuracy = calculate_accuracy(new_rgb, basic_recolored)
-    print("Basic recoloring accuracy: ", basic_accuracy)
+    #basic_accuracy = calculate_accuracy(new_rgb, basic_recolored)
+    #print("Basic recoloring accuracy: ", basic_accuracy)
 
     improved_accuracy = calculate_accuracy(new_rgb, improved_recolored)
     print("Improved recoloring accuracy: ", improved_accuracy)
 
-    advanced_accuracy = calculate_accuracy(new_rgb, advanced_recolored)
-    print("Advanced recoloring accuracy: ", advanced_accuracy)
 
     # print(gray)
     # print(gray.shape)
