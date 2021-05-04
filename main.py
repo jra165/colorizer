@@ -26,18 +26,14 @@ import matplotlib.pyplot as plt
 Gets the rgb and grayscale values from our image as two lists respectively.
 """
 def retrieve_pixels():
+    
+    #Opens image and resizes to 500px x 500px for running purposes
+    img = Image.open("palm_tree.jpeg")
+    result = img.resize((500,500), resample=Image.BILINEAR)
+    result.save("compressed_palm_tree.jpg")
 
-    # Get file path to image
-    image_path = os.path.join(os.getcwd(), 'palm_tree.jpeg')
-
-    # Open image
-    sf = Image.open(image_path)
-    img = (sf.copy())
-    sf.close()
-
-    # Convert to gray scale
-    rgb_list = np.array(img)
-    rgb_list = rgb_list[..., :3]
+    # Convert to corresponding gray scale 
+    rgb_list = np.array(result)[...,:3]
     gray_list = []
 
     #Utilize the given equation to convert to corresponding grayscale values
@@ -61,18 +57,63 @@ def cluster_pixels(rgb: np.array) -> Tuple[np.array, np.array]:
     :return: np.array of the 5 representative colors
     """
 
-    # Turn into 2D numpy array
-    flattened_rgb = rgb.reshape(rgb.shape[0] * rgb.shape[1], rgb.shape[2])
+    # Turn into 2D numpy array, multiply length by width and keep number of items in 3
+    flattened_rgb = rgb.reshape(250000, 3)
 
-    # Obtain initial centroids
-    centroids = initialize_centroids(flattened_rgb)
-    print("initial centroids", centroids)
+    
+    #Obtain initial centroids of image
+    #Sample 5 random points from number of image pixels
+    img_pixels = random.sample(range(0, 250000), 5)
 
-    # Recalculate centroid 10 times
+    #Initialize centroids list
+    initial_centroids = []
+
+    # Retrieve pixels using random numbers as indices
+    for i in img_pixels:
+        initial_centroids.append(flattened_rgb[i])
+
+    centroids = np.array(initial_centroids)
+    
+    
+
+    # Recalculate centroid 10 times until reaches stable state
     for i in range(10):
-        centroids = calculate_new_centroids(centroids, flattened_rgb)
+        
+        new_centroids = np.zeros(shape=(len(centroids), 3))
+        element_count = np.zeros(shape=len(centroids))
+
+        for pixel in flattened_rgb:
+    
+            min_distance = 1000000
+            min_centroid_i = 0
+    
+            # Determine centroid that pixel is closest to
+            for i in range(len(centroids)):
+                curr_distance = calculate_distance(pixel, centroids[i])
+                if curr_distance < min_distance:
+                    min_centroid_i = i
+                    min_distance = curr_distance
+    
+            # Add the pixel values to the corresponding centroid index
+            new_centroids[min_centroid_i] += pixel
+            element_count[min_centroid_i] += 1
+    
+        print("centroid sums before dividing", new_centroids)
+        print("element count: ", element_count)
+    
+        # Divide the sum of the pixel values for each pixel for each centroid by the number of pixels for that centroid
+        for i in range(len(centroids)):
+            new_centroids[i] /= element_count[i]
+    
+        print("centroid rgb values:", new_centroids)
+        centroids = new_centroids.astype(int)
+    
+    
         print("Iteration: ", i)
         print(centroids)
+        
+        
+    
 
     # Assign pixels to a color
     np.set_printoptions(threshold=sys.maxsize)
@@ -107,7 +148,7 @@ def assign_pixels_to_color(centroids: np.array, flattened_rgb: np.array) -> np.a
     Returns:
         np.array representing flattened_rgb appended with a column representing the color assignment
     """
-    pixel_colors = np.zeros(shape=(len(flattened_rgb), 1))
+    pixel_colors = np.zeros(shape=(250000, 1))
     index = 0
 
     for pixel in flattened_rgb:
@@ -171,26 +212,26 @@ def calculate_new_centroids(centroids: np.array, flattened_rgb: np.array) -> np.
     return new_centroids.astype(int)
 
 
-def initialize_centroids(flattened_rgb: np.array) -> np.array:
-    """
-    Randomly choose 5 points as initial centroids
-    Args:
-        flattened_rgb: array of pixels from the colored image
+# def initialize_centroids(flattened_rgb: np.array) -> np.array:
+#     """
+#     Randomly choose 5 points as initial centroids
+#     Args:
+#         flattened_rgb: array of pixels from the colored image
 
-    Returns:
-        np.array of shape (5, 3) with the 5 centroids
-    """
+#     Returns:
+#         np.array of shape (5, 3) with the 5 centroids
+#     """
 
-    # Generate 5 random numbers from 0 to # of pixels
-    random_nums = random.sample(range(0, len(flattened_rgb)), 5)
+#     # Generate 5 random numbers from 0 to # of pixels
+#     random_nums = random.sample(range(0, len(flattened_rgb)), 5)
 
-    initial_centroids = []
+#     initial_centroids = []
 
-    # Retrieve pixels using random numbers as indices
-    for i in random_nums:
-        initial_centroids.append(flattened_rgb[i])
+#     # Retrieve pixels using random numbers as indices
+#     for i in random_nums:
+#         initial_centroids.append(flattened_rgb[i])
 
-    return np.array(initial_centroids)
+#     return np.array(initial_centroids)
 
 
 def calculate_distance(curr_pixel: np.array, centroid: np.array) -> float:
