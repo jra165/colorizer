@@ -319,19 +319,19 @@ def generate_regression_equations(rgb: np.array, grey: np.array):
     return (wr, br), (wg, bg), (wb, bb)
 
 
-def calculate_accuracy(base: np.array, recolored: np.array) -> float:
+def calculate_accuracy(base, recolored):
     rows = base.shape[0]
     cols = base.shape[1]
-    counted_cells = 0
-    correctly_colored = 0
+    cell_count = 0
+    acc_count = 0
 
     for i in range (1,rows-1):
         for j in range(int(cols/2), cols-1):
             if np.array_equal(base[i][j], recolored[i][j]):
-                correctly_colored += 1
-            counted_cells += 1
+                acc_count += 1
+            cell_count += 1
 
-    accuracy = correctly_colored/counted_cells
+    accuracy = acc_count/cell_count
     return accuracy
 
 
